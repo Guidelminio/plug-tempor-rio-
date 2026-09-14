@@ -17,6 +17,7 @@
 - [x] Registro idempotente da execução diária de lembretes e alerta técnico para falhas de envio.
 - [x] Endpoint seguro para tarefa agendada em produção.
 - [x] Guia de implantação e configuração Google Cloud / serviço de e-mail.
+- [x] Correção da publicação web: a interface Expo agora é servida no domínio público em vez de retornar 404.
 
 ## Pendências externas antes da distribuição
 

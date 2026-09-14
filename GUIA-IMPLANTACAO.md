@@ -64,6 +64,8 @@ A tarefa automática ficará disponível no endpoint interno `/api/scheduled/att
 
 ## Publicação e primeira validação
 
+O build de produção exporta a interface Expo Web para `dist-web` e o servidor Express entrega essa exportação no mesmo domínio da API. Com isso, a página inicial e rotas da interface não retornam 404 após a publicação; as rotas `/api/*` continuam sob responsabilidade do backend.
+
 A sequência recomendada é publicar a versão atual, configurar os identificadores OAuth e o serviço de e-mail, cadastrar a turma piloto com e-mail do professor, gerar o APK de desenvolvimento e testar o fluxo inteiro em um aparelho Android. O teste de aceite deve incluir login Google, visibilidade limitada à turma autorizada, chamada com todos os alunos, reabertura de uma aula para correção, entrada de aluno novo, retirada de aluno e disparo controlado do lembrete diário.
 
 Antes de ativar lembretes para toda a rede, recomenda-se validar com uma turma piloto e um e-mail de coordenação. O aplicativo não deve ser distribuído amplamente enquanto o domínio de envio não estiver verificado e as contas Google dos professores não estiverem associadas às respectivas turmas.

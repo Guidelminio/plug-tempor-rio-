@@ -8,6 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { runAttendanceRemindersScheduled } from "../scheduled-attendance";
+import { registerWebStaticFiles } from "./web-static";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -74,6 +75,10 @@ async function startServer() {
       createContext,
     }),
   );
+
+  // Must be mounted after every API route. It serves the Expo web export at
+  // the public root and lets Expo Router handle non-API paths on the client.
+  registerWebStaticFiles(app);
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
