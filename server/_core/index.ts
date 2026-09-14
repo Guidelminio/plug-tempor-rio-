@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { runAttendanceRemindersScheduled } from "../scheduled-attendance";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -61,6 +62,10 @@ async function startServer() {
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });
   });
+
+  // Invoked only by the managed production scheduler; the handler authenticates
+  // the cron identity before looking up and processing reminder work.
+  app.post("/api/scheduled/attendance-reminders", runAttendanceRemindersScheduled);
 
   app.use(
     "/api/trpc",

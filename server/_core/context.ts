@@ -1,5 +1,7 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
+import { getUserById } from "../db";
+import { readGoogleSession } from "../google-session";
 import { sdk } from "./sdk";
 
 export type TrpcContext = {
@@ -10,17 +12,18 @@ export type TrpcContext = {
 
 export async function createContext(opts: CreateExpressContextOptions): Promise<TrpcContext> {
   let user: User | null = null;
+  const authorization = opts.req.headers.authorization;
+  const bearerToken = authorization?.startsWith("Bearer ") ? authorization.slice(7) : undefined;
 
   try {
-    user = await sdk.authenticateRequest(opts.req);
-  } catch (error) {
-    // Authentication is optional for public procedures.
+    const googleSession = await readGoogleSession(bearerToken);
+    if (googleSession) {
+      user = (await getUserById(googleSession.userId)) ?? null;
+    }
+    if (!user) user = await sdk.authenticateRequest(opts.req);
+  } catch {
     user = null;
   }
 
-  return {
-    req: opts.req,
-    res: opts.res,
-    user,
-  };
+  return { req: opts.req, res: opts.res, user };
 }
