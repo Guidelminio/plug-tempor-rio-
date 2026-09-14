@@ -32,6 +32,8 @@ No Google Cloud Console, devem existir os seguintes clientes OAuth no mesmo proj
 | Web | Client ID OAuth de aplicativo Web | Valida no servidor o token de identidade emitido pelo Google |
 | iOS, se necessário | Client ID OAuth iOS e URL scheme reverso | Habilita a autenticação nativa em iPhone/iPad |
 
+No projeto **My First Project**, o cliente Web existente é `747810874464-g4e8stgbtjr40oafjf29f1nctgl6utak.apps.googleusercontent.com`. O cliente Android de desenvolvimento foi criado com o pacote `com.app.plugpresencamobile` e o SHA-1 da chave local; seu ID é `747810874464-kf9ftcp30330e2gh9v5jh1ltvekuv2g3.apps.googleusercontent.com`.
+
 O SHA-1 depende da assinatura usada para gerar o APK ou publicar na Play Store. A documentação do Google informa que aplicações Android que usam Google Sign-In precisam do SHA-1 do certificado; para Play App Signing, ele fica em **Release → Setup → App Integrity**, e também pode ser obtido do APK/AAB ou por `keytool` [2].
 
 Os identificadores precisam ser adicionados como configurações seguras do projeto, sem serem gravados no código:
@@ -49,7 +51,7 @@ O servidor confere a assinatura e o público do token Google antes de criar a se
 
 Foi preparado um processo diário, com horário padrão de **20:00 em America/Sao_Paulo**, para encontrar turmas que possuem aula naquele dia e cuja chamada ainda não foi fechada. O processo envia no máximo um lembrete por turma e por dia. Cada tentativa fica registrada com situação, destinatário, identificador da mensagem e eventual erro, o que evita e-mails duplicados mesmo se a tarefa automática for reexecutada.
 
-O envio adotará a API do Resend como serviço transacional. A API recebe remetente, destinatário, assunto e HTML, e aceita uma chave de idempotência por requisição [3]. Em caso de falha ao avisar o professor, o sistema registra a falha e envia uma notificação técnica separada para a coordenação, quando houver destinatário de alerta configurado.
+O envio adotará a API do Resend como serviço transacional. A chave `plug-presenca-production` foi criada com permissão **Sending access** e validada contra a API. A API recebe remetente, destinatário, assunto e HTML, e aceita uma chave de idempotência por requisição [3]. Em caso de falha ao avisar o professor, o sistema registra a falha e envia uma notificação técnica separada para a coordenação, quando houver destinatário de alerta configurado.
 
 | Variável segura | Finalidade |
 |---|---|
@@ -58,7 +60,7 @@ O envio adotará a API do Resend como serviço transacional. A API recebe remete
 | `ATTENDANCE_ALERT_TO_EMAIL` | E-mail da coordenação para falhas de envio |
 | `ATTENDANCE_APP_URL` | Link exibido no lembrete para abrir o aplicativo ou portal |
 
-A tarefa automática ficará disponível no endpoint interno `/api/scheduled/attendance-reminders`. Após publicar a aplicação, a configuração da tarefa deve ser criada no ambiente de produção com execução diária às 23:00 UTC, equivalente a 20:00 em São Paulo. A plataforma autentica a execução como tarefa agendada e o aplicativo confere o identificador da tarefa antes de enviar qualquer e-mail.
+A tarefa automática ficará disponível no endpoint interno `/api/scheduled/attendance-reminders`. Ainda falta verificar um domínio de envio no Resend e definir o remetente da escola; por isso os lembretes não estão ativos para produção. Depois desses dois itens e da publicação da aplicação, a configuração da tarefa deve ser criada no ambiente de produção com execução diária às 23:00 UTC, equivalente a 20:00 em São Paulo. A plataforma autentica a execução como tarefa agendada e o aplicativo confere o identificador da tarefa antes de enviar qualquer e-mail.
 
 ## Publicação e primeira validação
 

@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
+import { GOOGLE_WEB_CLIENT_ID } from "@/shared/google-config";
 
-const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "";
+const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? GOOGLE_WEB_CLIENT_ID;
 const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? "";
 
 export const isGoogleSignInConfigured = Boolean(webClientId);

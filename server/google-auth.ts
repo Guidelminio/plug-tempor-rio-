@@ -1,4 +1,5 @@
 import { OAuth2Client } from "google-auth-library";
+import { GOOGLE_WEB_CLIENT_ID } from "../shared/google-config";
 
 const googleClient = new OAuth2Client();
 
@@ -9,7 +10,7 @@ export type GoogleIdentity = {
 };
 
 export async function verifyGoogleIdentityToken(idToken: string): Promise<GoogleIdentity> {
-  const audience = process.env.GOOGLE_WEB_CLIENT_ID ?? process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? "";
+  const audience = process.env.GOOGLE_WEB_CLIENT_ID ?? process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? GOOGLE_WEB_CLIENT_ID;
   if (!audience) {
     throw new Error("A autenticação Google ainda não foi configurada no servidor.");
   }

@@ -13,6 +13,10 @@ function configured() {
   return Boolean(ENV.resendApiKey && ENV.attendanceEmailFrom);
 }
 
+export function isReminderEmailConfigured() {
+  return configured();
+}
+
 export async function sendTransactionalEmail(message: EmailMessage): Promise<EmailSendResult> {
   if (!configured()) {
     throw new Error("O serviço de e-mail ainda não está configurado.");

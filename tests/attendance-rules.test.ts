@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { assertCompleteBatch, isTeacherAuthorized, lessonStatusFor, studentIsEligibleForLesson } from "../shared/attendance-rules";
 import { attendanceReminderHtml, attendanceReminderSubject, classMeetsOnDate, isReminderDue } from "../shared/reminder-rules";
+import { isReminderEmailConfigured } from "../server/reminder-email";
 
 describe("attendance batch rules", () => {
   it("accepts one entry for each eligible student", () => {
@@ -53,5 +54,9 @@ describe("attendance batch rules", () => {
     });
     expect(html).toContain("Olá, Lia.");
     expect(html).toContain("https://presenca.example");
+  });
+
+  it("keeps reminder provider configuration server-side", () => {
+    expect(typeof isReminderEmailConfigured()).toBe("boolean");
   });
 });

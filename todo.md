@@ -13,17 +13,19 @@
 
 ## Preparado nesta etapa
 
-- [ ] Lembrete automático por e-mail para aulas não fechadas no mesmo dia.
-- [ ] Registro idempotente da execução diária de lembretes e alerta técnico para falhas de envio.
-- [ ] Endpoint seguro para tarefa agendada em produção.
-- [ ] Guia de implantação e configuração Google Cloud / serviço de e-mail.
+- [x] Lembrete automático por e-mail para aulas não fechadas no mesmo dia.
+- [x] Registro idempotente da execução diária de lembretes e alerta técnico para falhas de envio.
+- [x] Endpoint seguro para tarefa agendada em produção.
+- [x] Guia de implantação e configuração Google Cloud / serviço de e-mail.
 
 ## Pendências externas antes da distribuição
 
-- [ ] Autorizar acesso ao Google Cloud ou fornecer os Client IDs OAuth do Google.
-- [ ] Informar uma chave de serviço de e-mail transacional e um remetente verificado.
+- [x] Autorizar acesso ao Google Cloud e criar os clientes OAuth Web/Android.
+- [x] Criar e validar a chave Resend com permissão Sending access.
+- [ ] Verificar um domínio de envio no Resend e definir `ATTENDANCE_EMAIL_FROM`.
+- [ ] Definir `ATTENDANCE_ALERT_TO_EMAIL` para alertas da coordenação.
 - [ ] Definir/importar as turmas e os e-mails dos professores autorizados.
-- [ ] Gerar o APK de desenvolvimento para obter/cadastrar o SHA-1 Android.
+- [ ] Gerar o APK de desenvolvimento com a chave cujo SHA-1 foi cadastrado.
 - [ ] Publicar a versão de produção e ativar a rotina diária de lembretes.
 
 ## Padrões adotados
