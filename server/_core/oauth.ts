@@ -1,6 +1,7 @@
 import { COOKIE_NAME, ONE_YEAR_MS } from "../../shared/const.js";
 import type { Express, Request, Response } from "express";
-import { getUserByOpenId, upsertUser } from "../db";
+import { getUserById, getUserByOpenId, publicUser, upsertUser } from "../db";
+import { readLocalSession, revokeLocalSession } from "../local-session";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 
@@ -128,7 +129,12 @@ export function registerOAuthRoutes(app: Express) {
     }
   });
 
-  app.post("/api/auth/logout", (req: Request, res: Response) => {
+  app.post("/api/auth/logout", async (req: Request, res: Response) => {
+    const header = req.headers.authorization;
+    const token = typeof header === "string" && header.startsWith("Bearer ")
+      ? header.slice(7).trim()
+      : req.cookies?.[COOKIE_NAME];
+    await revokeLocalSession(token);
     const cookieOptions = getSessionCookieOptions(req);
     res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
     res.json({ success: true });
@@ -137,6 +143,18 @@ export function registerOAuthRoutes(app: Express) {
   // Get current authenticated user - works with both cookie (web) and Bearer token (mobile)
   app.get("/api/auth/me", async (req: Request, res: Response) => {
     try {
+      const header = req.headers.authorization;
+      const token = typeof header === "string" && header.startsWith("Bearer ")
+        ? header.slice(7).trim()
+        : req.cookies?.[COOKIE_NAME];
+      const localSession = await readLocalSession(token);
+      if (localSession) {
+        const localUser = await getUserById(localSession.userId);
+        if (localUser?.active) {
+          res.json({ user: publicUser(localUser) });
+          return;
+        }
+      }
       const user = await sdk.authenticateRequest(req);
       res.json({ user: buildUserResponse(user) });
     } catch (error) {
@@ -151,8 +169,6 @@ export function registerOAuthRoutes(app: Express) {
   app.post("/api/auth/session", async (req: Request, res: Response) => {
     try {
       // Authenticate using Bearer token from Authorization header
-      const user = await sdk.authenticateRequest(req);
-
       // Get the token from the Authorization header to set as cookie
       const authHeader = req.headers.authorization || req.headers.Authorization;
       if (typeof authHeader !== "string" || !authHeader.startsWith("Bearer ")) {
@@ -160,6 +176,16 @@ export function registerOAuthRoutes(app: Express) {
         return;
       }
       const token = authHeader.slice("Bearer ".length).trim();
+      const localSession = await readLocalSession(token);
+      if (localSession) {
+        const localUser = await getUserById(localSession.userId);
+        if (!localUser?.active) throw new Error("Invalid local user");
+        const cookieOptions = getSessionCookieOptions(req);
+        res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        res.json({ success: true, user: publicUser(localUser) });
+        return;
+      }
+      const user = await sdk.authenticateRequest(req);
 
       // Set cookie for this domain (3000-xxx)
       const cookieOptions = getSessionCookieOptions(req);

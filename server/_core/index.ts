@@ -8,6 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { runAttendanceRemindersScheduled } from "../scheduled-attendance";
+import { runAttendanceSyncScheduled } from "../scheduled-sync";
 import { registerWebStaticFiles } from "./web-static";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -67,6 +68,7 @@ async function startServer() {
   // Invoked only by the managed production scheduler; the handler authenticates
   // the cron identity before looking up and processing reminder work.
   app.post("/api/scheduled/attendance-reminders", runAttendanceRemindersScheduled);
+  app.post("/api/scheduled/attendance-sync", runAttendanceSyncScheduled);
 
   app.use(
     "/api/trpc",

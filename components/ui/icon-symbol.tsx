@@ -15,19 +15,10 @@ const MAPPING = {
   "chevron.right": "chevron-right",
   "checklist": "checklist",
   "person.circle": "account-circle",
+  "bell.fill": "notifications",
+  "gearshape.fill": "settings",
 } as IconMapping;
 
-export function IconSymbol({
-  name,
-  size = 24,
-  color,
-  style,
-}: {
-  name: IconSymbolName;
-  size?: number;
-  color: string | OpaqueColorValue;
-  style?: StyleProp<TextStyle>;
-  weight?: SymbolWeight;
-}) {
+export function IconSymbol({ name, size = 24, color, style }: { name: IconSymbolName; size?: number; color: string | OpaqueColorValue; style?: StyleProp<TextStyle>; weight?: SymbolWeight }) {
   return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
 }

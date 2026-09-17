@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -15,8 +16,9 @@ import {
 
 import { ScreenContainer } from "@/components/screen-container";
 import { useAuth } from "@/hooks/use-auth";
-import { signInWithGoogleNative, isGoogleSignInConfigured } from "@/lib/google-signin";
 import * as Auth from "@/lib/_core/auth";
+import * as Api from "@/lib/_core/api";
+import { createOfflineBatchId, listOfflineBatches, queueOfflineBatch, removeOfflineBatch, type OfflineAttendanceBatch } from "@/lib/offline-attendance";
 import { trpc } from "@/lib/trpc";
 
 type AttendanceStatus = "PRESENT" | "ABSENT" | "EXCUSED" | "NOT_MARKED";
@@ -79,28 +81,37 @@ function PressButton({
   );
 }
 
-function GoogleGate() {
+function LoginGate() {
   const auth = useAuth({ autoFetch: false });
-  const login = trpc.auth.googleLogin.useMutation();
+  const login = trpc.auth.login.useMutation();
   const [message, setMessage] = useState<string | null>(null);
+  const [loginName, setLoginName] = useState("");
+  const [password, setPassword] = useState("");
 
   const startLogin = async () => {
     try {
       setMessage(null);
-      const idToken = await signInWithGoogleNative();
-      const response = await login.mutateAsync({ idToken });
+      const response = await login.mutateAsync({
+        login: loginName.trim(),
+        password,
+        deviceName: Platform.OS === "web" ? "Navegador" : `${Platform.OS} mobile`,
+      });
       await Auth.setSessionToken(response.sessionToken);
+      if (Platform.OS === "web") await Api.establishSession(response.sessionToken);
       await Auth.setUserInfo({
         id: response.user.id,
         openId: response.user.openId,
         name: response.user.name,
         email: response.user.email,
         loginMethod: response.user.loginMethod,
+        role: response.user.role,
+        mustChangePassword: response.user.mustChangePassword,
+        active: response.user.active,
         lastSignedIn: new Date(response.user.lastSignedIn),
       });
       await auth.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Não foi possível entrar com o Google.");
+      setMessage(error instanceof Error ? error.message : "Não foi possível entrar.");
     }
   };
 
@@ -115,18 +126,14 @@ function GoogleGate() {
           <Text className="mt-2 text-base leading-6 text-muted">Chamada simples, segura e registrada em um único envio.</Text>
         </View>
         <View className="rounded-3xl border border-border bg-surface p-5">
-          <Text className="text-lg font-bold text-foreground">Entrar como professor</Text>
-          <Text className="mt-2 text-sm leading-5 text-muted">Use a conta Google cadastrada pela coordenação para ver somente as suas turmas.</Text>
-          {Platform.OS === "web" ? (
-            <Text className="mt-4 rounded-xl bg-[#FFF4DF] p-3 text-xs leading-5 text-[#8B5A20]">O login Google é nativo e será ativado no APK de desenvolvimento. Esta prévia web serve para validar o fluxo do aplicativo.</Text>
-          ) : null}
-          {!isGoogleSignInConfigured ? (
-            <Text className="mt-4 rounded-xl bg-[#FFF4DF] p-3 text-xs leading-5 text-[#8B5A20]">Configuração Google pendente: a coordenação precisa vincular o projeto OAuth antes da distribuição do aplicativo.</Text>
-          ) : null}
+          <Text className="text-lg font-bold text-foreground">Entrar</Text>
+          <Text className="mt-2 text-sm leading-5 text-muted">Use o e-mail e a senha fornecidos pela coordenação. O acesso ficará salvo neste aparelho.</Text>
+          <TextInput value={loginName} onChangeText={setLoginName} autoCapitalize="none" keyboardType="email-address" placeholder="E-mail" placeholderTextColor="#718096" className="mt-5 rounded-xl border border-border bg-white px-4 py-3 text-base text-foreground" />
+          <TextInput value={password} onChangeText={setPassword} secureTextEntry placeholder="Senha" placeholderTextColor="#718096" className="mt-3 rounded-xl border border-border bg-white px-4 py-3 text-base text-foreground" returnKeyType="done" onSubmitEditing={startLogin} />
           {message ? <Text className="mt-4 rounded-xl bg-[#FCECEC] p-3 text-xs leading-5 text-error">{message}</Text> : null}
           <View className="mt-5">
-            <PressButton onPress={startLogin} disabled={login.isPending || !isGoogleSignInConfigured}>
-              {login.isPending ? "Entrando..." : "Continuar com Google"}
+            <PressButton onPress={startLogin} disabled={login.isPending || loginName.trim().length < 3 || password.length < 8}>
+              {login.isPending ? "Entrando..." : "Entrar"}
             </PressButton>
           </View>
         </View>
@@ -147,6 +154,10 @@ export default function AttendanceScreen() {
   const [newStudentName, setNewStudentName] = useState("");
   const [newStudentNotes, setNewStudentNotes] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const [whatsAppMessage, setWhatsAppMessage] = useState<string | null>(null);
+  const [offlineBatches, setOfflineBatches] = useState<OfflineAttendanceBatch[]>([]);
+  const [sendingPending, setSendingPending] = useState(false);
+  const [webOnline, setWebOnline] = useState(() => Platform.OS !== "web" || typeof navigator === "undefined" ? true : navigator.onLine);
 
   const classesQuery = trpc.attendance.listClasses.useQuery(undefined, { enabled: Boolean(user) });
   useEffect(() => {
@@ -164,6 +175,35 @@ export default function AttendanceScreen() {
   const saveBatch = trpc.attendance.saveBatch.useMutation();
   const addStudent = trpc.attendance.addStudent.useMutation();
   const deactivateStudent = trpc.attendance.deactivateStudent.useMutation();
+
+  useEffect(() => {
+    listOfflineBatches().then(setOfflineBatches);
+    if (Platform.OS !== "web" || typeof window === "undefined") return;
+    const online = () => setWebOnline(true);
+    const offline = () => setWebOnline(false);
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+    return () => { window.removeEventListener("online", online); window.removeEventListener("offline", offline); };
+  }, []);
+
+  const resendOfflineBatches = async () => {
+    if (!offlineBatches.length) return;
+    setSendingPending(true);
+    let sent = 0;
+    for (const batch of offlineBatches) {
+      try {
+        await saveBatch.mutateAsync(batch);
+        await removeOfflineBatch(batch.clientBatchId);
+        sent += 1;
+      } catch {
+        // Keep the batch until the server accepts it; duplicate delivery is safe by clientBatchId.
+      }
+    }
+    const remaining = await listOfflineBatches();
+    setOfflineBatches(remaining);
+    setSendingPending(false);
+    setNotice(sent ? `${sent} chamada(s) pendente(s) foram enviadas.` : "Ainda não foi possível enviar as chamadas pendentes.");
+  };
 
   useEffect(() => {
     if (callSheetQuery.data) {
@@ -200,6 +240,7 @@ export default function AttendanceScreen() {
       setNotice(`Ainda existem ${pendingCount} aluno(s) sem marcação. Complete a chamada antes de enviar.`);
       return;
     }
+    const clientBatchId = createOfflineBatchId();
     Alert.alert("Enviar chamada?", `Serão atualizados ${entries.length} registros desta aula de uma só vez.`, [
       { text: "Revisar", style: "cancel" },
       {
@@ -210,14 +251,22 @@ export default function AttendanceScreen() {
             const result = await saveBatch.mutateAsync({
               classId: selectedClassId,
               lessonDate,
+              clientBatchId,
               entries: entries.map(({ studentId, status, observation }) => ({ studentId, status, observation })),
             });
             await utils.attendance.getCallSheet.invalidate({ classId: selectedClassId, lessonDate });
             await utils.attendance.listLessons.invalidate({ classId: selectedClassId });
             if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setNotice(`${result.entriesSaved} presenças enviadas. Aula ${result.status === "CLOSED" ? "fechada" : "pendente"}.`);
+            setWhatsAppMessage(`Plug Presença: chamada de ${selectedClass?.name || "turma"} em ${formatDate(lessonDate)} enviada. Presentes: ${presentCount}; ausentes: ${absentCount}.`);
           } catch (error) {
-            setNotice(error instanceof Error ? error.message : "Não foi possível salvar a chamada.");
+            const message = error instanceof Error ? error.message : "Não foi possível salvar a chamada.";
+            const likelyOffline = /network|fetch|timeout|offline|failed to fetch/i.test(message);
+            if (likelyOffline) {
+              const pending = await queueOfflineBatch({ classId: selectedClassId, lessonDate, clientBatchId, entries: entries.map(({ studentId, status, observation }) => ({ studentId, status, observation })), createdAt: new Date().toISOString() });
+              setOfflineBatches(pending);
+              setNotice("Sem conexão. A chamada foi guardada neste aparelho e poderá ser enviada depois.");
+            } else setNotice(message);
           }
         },
       },
@@ -260,7 +309,7 @@ export default function AttendanceScreen() {
   if (loading) {
     return <ScreenContainer className="items-center justify-center"><ActivityIndicator size="large" color="#F28C28" /></ScreenContainer>;
   }
-  if (!user) return <GoogleGate />;
+  if (!user) return <LoginGate />;
 
   return (
     <ScreenContainer className="bg-background" edges={["top", "left", "right"]}>
@@ -307,7 +356,9 @@ export default function AttendanceScreen() {
             </View>
 
             {notice ? <Text className="mt-3 rounded-xl bg-[#E8F6EE] p-3 text-xs leading-5 text-[#176E46]">{notice}</Text> : null}
+            {whatsAppMessage ? <Pressable onPress={() => Linking.openURL(`https://wa.me/?text=${encodeURIComponent(whatsAppMessage)}`)} style={({ pressed }) => ({ opacity: pressed ? 0.72 : 1 })} className="mt-2 self-start rounded-lg border border-[#CBEBD8] bg-white px-3 py-2"><Text className="text-xs font-bold text-[#176E46]">Abrir resumo no WhatsApp</Text></Pressable> : null}
             {callSheetQuery.error ? <Text className="mt-3 rounded-xl bg-[#FCECEC] p-3 text-xs leading-5 text-error">{callSheetQuery.error.message}</Text> : null}
+            <View className={`mt-3 flex-row items-center justify-between rounded-xl border p-3 ${webOnline ? "border-[#CBEBD8] bg-[#F3FBF6]" : "border-[#F4D6B4] bg-[#FFF8EF]"}`}><Text className={`text-xs font-bold ${webOnline ? "text-[#176E46]" : "text-[#8B5A20]"}`}>{webOnline ? "Conexão disponível para enviar" : "Sem conexão — os envios ficam pendentes"}</Text>{offlineBatches.length ? <Pressable onPress={resendOfflineBatches} disabled={sendingPending} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}><Text className="text-xs font-black text-primary">{sendingPending ? "Enviando..." : `Enviar ${offlineBatches.length} pendente(s)`}</Text></Pressable> : null}</View>
 
             <View className="mt-5 flex-row items-end justify-between">
               <View>
@@ -351,7 +402,7 @@ export default function AttendanceScreen() {
             </View>
           );
         }}
-        ListEmptyComponent={callSheetQuery.isLoading ? <View className="items-center py-12"><ActivityIndicator color="#F28C28" /><Text className="mt-3 text-sm text-muted">Carregando alunos...</Text></View> : <View className="mx-5 items-center rounded-2xl border border-dashed border-border bg-surface p-7"><Text className="text-base font-bold text-foreground">{hasNoClasses ? "Nenhuma turma autorizada" : "Nenhum aluno ativo"}</Text><Text className="mt-2 text-center text-sm leading-5 text-muted">{hasNoClasses ? "A coordenação precisa cadastrar ou importar uma turma vinculada ao seu e-mail Google." : "Adicione o primeiro aluno para iniciar a chamada."}</Text></View>}
+        ListEmptyComponent={callSheetQuery.isLoading ? <View className="items-center py-12"><ActivityIndicator color="#F28C28" /><Text className="mt-3 text-sm text-muted">Carregando alunos...</Text></View> : <View className="mx-5 items-center rounded-2xl border border-dashed border-border bg-surface p-7"><Text className="text-base font-bold text-foreground">{hasNoClasses ? "Nenhuma turma autorizada" : "Nenhum aluno ativo"}</Text><Text className="mt-2 text-center text-sm leading-5 text-muted">{hasNoClasses ? "A coordenação precisa vincular sua conta a uma turma." : "Adicione o primeiro aluno para iniciar a chamada."}</Text></View>}
         contentContainerStyle={{ paddingBottom: 116 }}
       />
 

@@ -7,12 +7,14 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
-  /** Resend send-only key; this value remains on the server and is never sent to Expo. */
   resendApiKey: process.env.RESEND_API_KEY ?? "",
-  /** Verified sender, e.g. Plug Presença <presenca@escola.org>. */
   attendanceEmailFrom: process.env.ATTENDANCE_EMAIL_FROM ?? "",
-  /** Administrative email that receives failures from automatic teacher reminders. */
   attendanceAlertToEmail: process.env.ATTENDANCE_ALERT_TO_EMAIL ?? "",
-  /** Public app or web portal URL included in teacher email reminders. */
   attendanceAppUrl: process.env.ATTENDANCE_APP_URL ?? "",
+  /** One-time protected bootstrap values for the first local administrator. */
+  initialAdminEmail: process.env.INITIAL_ADMIN_EMAIL ?? "",
+  initialAdminPassword: process.env.INITIAL_ADMIN_PASSWORD ?? "",
+  /** Apps Script Web App endpoint and shared HMAC secret. Both stay on the server. */
+  appsScriptSyncUrl: process.env.APPS_SCRIPT_SYNC_URL ?? "",
+  appsScriptSyncSecret: process.env.APPS_SCRIPT_SYNC_SECRET ?? "",
 };
