@@ -81,8 +81,7 @@ function PressButton({
   );
 }
 
-function LoginGate() {
-  const auth = useAuth({ autoFetch: false });
+function LoginGate({ onLoggedIn }: { onLoggedIn: () => void | Promise<void> }) {
   const login = trpc.auth.login.useMutation();
   const [message, setMessage] = useState<string | null>(null);
   const [loginName, setLoginName] = useState("");
@@ -109,7 +108,7 @@ function LoginGate() {
         active: response.user.active,
         lastSignedIn: new Date(response.user.lastSignedIn),
       });
-      await auth.refresh();
+      await onLoggedIn();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Não foi possível entrar.");
     }
@@ -143,7 +142,7 @@ function LoginGate() {
 }
 
 export default function AttendanceScreen() {
-  const { user, loading } = useAuth();
+  const { user, loading, refresh } = useAuth();
   const utils = trpc.useUtils();
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
   const [lessonDate, setLessonDate] = useState(todayKey());
@@ -309,7 +308,7 @@ export default function AttendanceScreen() {
   if (loading) {
     return <ScreenContainer className="items-center justify-center"><ActivityIndicator size="large" color="#F28C28" /></ScreenContainer>;
   }
-  if (!user) return <LoginGate />;
+  if (!user) return <LoginGate onLoggedIn={refresh} />;
 
   return (
     <ScreenContainer className="bg-background" edges={["top", "left", "right"]}>
