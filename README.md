@@ -80,6 +80,8 @@ Após o primeiro login do administrador, troque a senha inicial e remova `INITIA
 - [Guia de hospedagem, troca de host e domínio](./HOSTING.md)
 - [Modelo de variáveis de ambiente](./ENVIRONMENT-TEMPLATE.md)
 - [Guia de implantação e integrações](./GUIA-IMPLANTACAO.md)
+- [Erros, riscos e pendências](./ERROS-E-PENDENCIAS.md)
+- [Onboarding para outras IAs](./ONBOARDING-IA.md)
 - [Relatório de auditoria técnica](./RELATORIO-AUDITORIA-2026-09-23.md)
 - [Ponte Apps Script](./apps-script/README.md)
 - [Capturas do aplicativo](./docs/screenshots/README.md)
