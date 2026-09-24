@@ -1,15 +1,7 @@
-export const REMINDER_TIME_ZONE = "America/Sao_Paulo";
+import { dateKeyInTimeZone } from "./civil-date";
+export { dateKeyInTimeZone } from "./civil-date";
 
-export function dateKeyInTimeZone(value: Date, timeZone = REMINDER_TIME_ZONE): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(value);
-  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
-  return `${get("year")}-${get("month")}-${get("day")}`;
-}
+export const REMINDER_TIME_ZONE = "America/Sao_Paulo";
 
 export function isReminderDue(lastReminderAt: Date | null, todayKey: string, timeZone = REMINDER_TIME_ZONE) {
   return !lastReminderAt || dateKeyInTimeZone(lastReminderAt, timeZone) !== todayKey;
@@ -17,8 +9,9 @@ export function isReminderDue(lastReminderAt: Date | null, todayKey: string, tim
 
 export function classMeetsOnDate(dayOfWeek: number | null, dateKey: string) {
   if (dayOfWeek === null || dayOfWeek < 0 || dayOfWeek > 6) return false;
-  const date = new Date(`${dateKey}T12:00:00.000Z`);
-  return date.getUTCDay() === dayOfWeek;
+  const [year, month, day] = dateKey.split("-").map(Number);
+  if (!year || !month || !day) return false;
+  return new Date(Date.UTC(year, month - 1, day, 12)).getUTCDay() === dayOfWeek;
 }
 
 export function attendanceReminderSubject(className: string, lessonDate: string) {

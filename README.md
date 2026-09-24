@@ -45,11 +45,12 @@ Comandos úteis:
 pnpm check       # TypeScript
 pnpm lint        # lint Expo
 pnpm test        # testes locais e integrações configuradas
+pnpm test:external # testes reais contra Apps Script e Resend; depende de rede e secrets
 pnpm build       # export web + bundle Node
 pnpm start       # servidor de produção
 ```
 
-Os testes que acessam Apps Script e Resend dependem de rede e credenciais válidas. Para uma pipeline contínua, separe esses testes externos dos testes determinísticos; essa recomendação está detalhada no relatório de auditoria.
+`pnpm test` agora executa somente a suíte determinística. Os testes que acessam Apps Script e Resend ficam em `pnpm test:external`, pois dependem de rede e credenciais válidas. Em produção, configure `ALLOWED_ORIGINS` com uma lista separada por vírgulas contendo apenas os domínios oficiais.
 
 ## Trocar o host
 

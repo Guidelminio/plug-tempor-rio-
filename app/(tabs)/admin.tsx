@@ -1,4 +1,4 @@
-import { ActivityIndicator, Alert, FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Modal, Pressable, Text, TextInput, View } from "react-native";
 import { useMemo, useState } from "react";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,7 +13,6 @@ export default function AdminScreen() {
   const classes = trpc.admin.listClasses.useQuery(undefined, { enabled: user?.role === "admin" });
   const createTeacher = trpc.admin.createTeacher.useMutation();
   const createClass = trpc.admin.createClass.useMutation();
-  const updateTeacher = trpc.admin.updateTeacher.useMutation();
   const [mode, setMode] = useState<"teacher" | "class" | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

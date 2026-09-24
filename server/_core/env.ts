@@ -17,4 +17,5 @@ export const ENV = {
   /** Apps Script Web App endpoint and shared HMAC secret. Both stay on the server. */
   appsScriptSyncUrl: process.env.APPS_SCRIPT_SYNC_URL ?? "",
   appsScriptSyncSecret: process.env.APPS_SCRIPT_SYNC_SECRET ?? "",
+  allowedOrigins: process.env.ALLOWED_ORIGINS ?? "",
 };

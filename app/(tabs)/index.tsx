@@ -20,6 +20,7 @@ import * as Auth from "@/lib/_core/auth";
 import * as Api from "@/lib/_core/api";
 import { createOfflineBatchId, listOfflineBatches, queueOfflineBatch, removeOfflineBatch, type OfflineAttendanceBatch } from "@/lib/offline-attendance";
 import { trpc } from "@/lib/trpc";
+import { formatCivilDate, isDateKey, todayDateKey } from "@/shared/civil-date";
 
 type AttendanceStatus = "PRESENT" | "ABSENT" | "EXCUSED" | "NOT_MARKED";
 type AttendanceEntry = { studentId: number; fullName: string; active: boolean; status: AttendanceStatus; observation?: string };
@@ -32,14 +33,13 @@ const STATUS = {
 } as const;
 
 function todayKey() {
-  const now = new Date();
-  const offset = now.getTimezoneOffset() * 60_000;
-  return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+  return todayDateKey();
 }
 
 function formatDate(value: string | Date) {
-  const parsed = new Date(value);
-  return new Intl.DateTimeFormat("pt-BR", { weekday: "short", day: "2-digit", month: "short" }).format(parsed).replace(".", "");
+  if (typeof value === "string" && isDateKey(value)) return formatCivilDate(value);
+  if (value instanceof Date) return formatCivilDate(`${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, "0")}-${String(value.getUTCDate()).padStart(2, "0")}`);
+  return String(value);
 }
 
 function statusLabel(status: AttendanceStatus) {
@@ -235,6 +235,10 @@ export default function AttendanceScreen() {
 
   const submitAttendance = async () => {
     if (!selectedClassId || !entries.length) return;
+    if (!isDateKey(lessonDate)) {
+      setNotice("Informe uma data válida no formato AAAA-MM-DD.");
+      return;
+    }
     if (pendingCount) {
       setNotice(`Ainda existem ${pendingCount} aluno(s) sem marcação. Complete a chamada antes de enviar.`);
       return;
@@ -426,7 +430,7 @@ export default function AttendanceScreen() {
           <View className="max-h-[82%] rounded-t-3xl bg-background px-5 pb-9 pt-5">
             <View className="mb-4 h-1.5 w-10 self-center rounded-full bg-border" />
             <Text className="text-xl font-black text-foreground">Selecionar aula</Text>
-            <TextInput value={lessonDate} onChangeText={setLessonDate} placeholder="AAAA-MM-DD" placeholderTextColor="#718096" className="mt-4 rounded-xl border border-border bg-surface px-4 py-3 text-base text-foreground" />
+            <TextInput value={lessonDate} onChangeText={setLessonDate} placeholder="AAAA-MM-DD" placeholderTextColor="#718096" keyboardType="numbers-and-punctuation" className="mt-4 rounded-xl border border-border bg-surface px-4 py-3 text-base text-foreground" />
             <PressButton onPress={() => { setLessonPickerOpen(false); setNotice("Data selecionada. A aula será criada ao enviar a chamada."); }} tone="outline">Usar esta data</PressButton>
             <Text className="mt-6 text-xs font-bold uppercase tracking-[1.2px] text-muted">Aulas recentes</Text>
             <FlatList className="mt-2" data={lessonsQuery.data || []} keyExtractor={(item) => String(item.id)} renderItem={({ item }) => <Pressable onPress={() => { const key = new Date(item.lessonDate).toISOString().slice(0, 10); setLessonDate(key); setLessonPickerOpen(false); setNotice(null); }} className="flex-row items-center justify-between border-b border-border py-4"><View><Text className="text-base font-bold text-foreground">{formatDate(item.lessonDate)}</Text><Text className="mt-1 text-xs text-muted">{item.startTime || "Horário não informado"} · {item.status === "CLOSED" ? "Enviada" : "Pendente"}</Text></View><Text className="text-primary">›</Text></Pressable>} ListEmptyComponent={<Text className="py-6 text-center text-sm text-muted">Ainda não há aulas registradas nesta turma.</Text>} />

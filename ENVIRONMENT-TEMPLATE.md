@@ -10,6 +10,7 @@ JWT_SECRET=troque-por-um-segredo-longo-e-aleatorio
 INITIAL_ADMIN_EMAIL=admin@exemplo.org.br
 INITIAL_ADMIN_PASSWORD=troque-por-uma-senha-temporaria
 ATTENDANCE_APP_URL=https://presenca.exemplo.org.br
+ALLOWED_ORIGINS=https://presenca.exemplo.org.br,https://www.presenca.exemplo.org.br
 
 RESEND_API_KEY=re_coloque_a_chave_no_painel_de_segredos
 ATTENDANCE_EMAIL_FROM=Plug Presença <presenca@exemplo.org.br>

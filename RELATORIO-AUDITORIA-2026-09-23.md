@@ -4,6 +4,8 @@
 **Projeto:** `plug-presenca-mobile`  
 **Objetivo:** verificar a programação, os fluxos de interface, os botões, os testes, a operação publicada, a sincronização efetiva com Google Sheets e a melhor arquitetura para hospedagem em servidor próprio.
 
+**Atualização posterior:** foram iniciadas correções para restringir CORS, tratar datas civis sem deslocamento de fuso e separar testes externos da suíte determinística. Consulte `ERROS-E-PENDENCIAS.md` para o estado operacional mais recente.
+
 ## 1. Resumo executivo
 
 O aplicativo já possui uma base funcional relevante: autenticação local de professores e administrador, sessões persistentes, painel administrativo, criação de turmas, vínculo de professores, cadastro e inativação de alunos, seleção de aula, marcação em lote de presença, fila local para perda de conexão, notificações internas, ponte Apps Script assinada e sincronização idempotente com uma planilha de homologação.

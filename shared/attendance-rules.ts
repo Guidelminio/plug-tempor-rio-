@@ -1,3 +1,5 @@
+import { dateKeyFromDate, isDateKey, weekdayForDateKey } from "./civil-date";
+
 export const attendanceStatuses = ["PRESENT", "ABSENT", "EXCUSED", "NOT_MARKED"] as const;
 export type AttendanceStatus = (typeof attendanceStatuses)[number];
 export type AttendanceBatchEntry = { studentId: number; status: AttendanceStatus };
@@ -22,5 +24,9 @@ export function isTeacherAuthorized(teacherEmail: string, signedInEmail: string 
 }
 
 export function studentIsEligibleForLesson(entryDate: Date | null, lessonDateKey: string) {
-  return !entryDate || entryDate.toISOString().slice(0, 10) <= lessonDateKey;
+  return !entryDate || (isDateKey(lessonDateKey) && dateKeyFromDate(entryDate) <= lessonDateKey);
+}
+
+export function lessonWeekday(lessonDateKey: string) {
+  return weekdayForDateKey(lessonDateKey);
 }
