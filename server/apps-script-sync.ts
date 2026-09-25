@@ -2,9 +2,20 @@ import { createHmac } from "node:crypto";
 import { ENV } from "./_core/env";
 
 export type AppsScriptSyncPayload = {
-  action: "syncAttendance" | "sendNotification";
+  action: "syncAttendance" | "sendNotification" | "provisionClassSpreadsheet";
   batch?: Record<string, unknown>;
   notification?: { to: string; subject: string; body: string };
+  class?: {
+    id: number;
+    code: string;
+    name: string;
+    course?: string | null;
+    dayOfWeek?: number | null;
+    startTime?: string | null;
+    endTime?: string | null;
+    teacherName?: string | null;
+    teacherEmail?: string | null;
+  };
 };
 
 function canonicalPayload(payload: AppsScriptSyncPayload) {
@@ -28,7 +39,7 @@ export async function callAppsScript(payload: AppsScriptSyncPayload) {
     body: JSON.stringify({ payload, signature: signatureFor(payload) }),
   });
   const text = await response.text();
-  let data: { ok?: boolean; error?: string; message?: string } = {};
+  let data: { ok?: boolean; error?: string; message?: string; spreadsheetId?: string; spreadsheetUrl?: string } = {};
   try { data = JSON.parse(text); } catch { /* The Apps Script endpoint can return text on deployment errors. */ }
   if (!response.ok || !data.ok) throw new Error(data.error || text || `Ponte Google retornou ${response.status}.`);
   return data;

@@ -19,7 +19,7 @@ export async function enqueueAttendanceSync(input: { lessonId: number; classId: 
   const owner = (await db.select().from(users).where(eq(users.id, input.userId)).limit(1))[0];
   const payload = {
     batchId: input.externalId,
-    class: { code: attendanceClass.code, name: attendanceClass.name, course: attendanceClass.course },
+    class: { code: attendanceClass.code, name: attendanceClass.name, course: attendanceClass.course, spreadsheetId: attendanceClass.spreadsheetId, spreadsheetUrl: attendanceClass.spreadsheetUrl },
     lesson: { id: lesson.externalId, date: lesson.lessonDate, startTime: lesson.startTime, endTime: lesson.endTime, status: lesson.status },
     teacher: { id: owner?.id ?? null, name: owner?.name ?? null, email: owner?.email ?? null },
     records: records.map((record) => ({

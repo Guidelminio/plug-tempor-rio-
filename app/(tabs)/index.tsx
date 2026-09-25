@@ -316,16 +316,19 @@ export default function AttendanceScreen() {
 
   return (
     <ScreenContainer className="bg-background" edges={["top", "left", "right"]}>
-      <View className="px-5 pt-3 pb-4">
-        <View className="flex-row items-center justify-between">
-          <View>
-            <Text className="text-xs font-bold uppercase tracking-[1.5px] text-primary">Plug and Plus</Text>
-            <Text className="mt-1 text-2xl font-black text-foreground">Nova chamada</Text>
+      <View className="mx-5 mt-3 mb-1 rounded-[28px] bg-foreground p-5 shadow-sm">
+        <View className="flex-row items-start justify-between">
+          <View className="flex-1 pr-4">
+            <Text className="text-[11px] font-black uppercase tracking-[1.8px] text-[#FFB15C]">Plug and Plus</Text>
+            <Text className="mt-2 text-2xl font-black text-white">Nova chamada</Text>
+            <Text className="mt-1 text-xs leading-5 text-[#C7D5E3]">Registre a presença da sua turma em poucos toques.</Text>
           </View>
-          <View className="items-end">
-            <Text className="text-sm font-semibold text-foreground">{user.name || "Professor(a)"}</Text>
-            <Text className="mt-0.5 max-w-[150px] text-xs text-muted" numberOfLines={1}>{user.email}</Text>
-          </View>
+          <View className="h-12 w-12 items-center justify-center rounded-2xl bg-primary"><Text className="text-lg font-black text-[#142A43]">P+</Text></View>
+        </View>
+        <View className="mt-5 flex-row items-center border-t border-[#36516A] pt-3">
+          <View className="h-8 w-8 items-center justify-center rounded-full bg-[#29435D]"><Text className="text-xs font-black text-[#FFB15C]">{(user.name || "P").slice(0, 1).toUpperCase()}</Text></View>
+          <View className="ml-2 flex-1"><Text className="text-xs font-bold text-white">{user.name || "Professor(a)"}</Text><Text className="mt-0.5 text-[10px] text-[#AFC0D0]" numberOfLines={1}>{user.email}</Text></View>
+          <Text className="text-[10px] font-bold text-[#AFC0D0]">Hoje</Text>
         </View>
       </View>
 
@@ -335,7 +338,7 @@ export default function AttendanceScreen() {
         refreshControl={<RefreshControl refreshing={classesQuery.isRefetching || callSheetQuery.isRefetching} onRefresh={() => { classesQuery.refetch(); callSheetQuery.refetch(); }} tintColor="#F28C28" />}
         ListHeaderComponent={
           <View className="px-5">
-            <Pressable onPress={() => setClassPickerOpen(true)} style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })} className="rounded-2xl border border-border bg-surface p-4">
+            <Pressable onPress={() => setClassPickerOpen(true)} style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })} className="rounded-2xl border border-border bg-white p-4 shadow-sm">
               <Text className="text-[11px] font-bold uppercase tracking-[1.2px] text-muted">Turma</Text>
               <View className="mt-1 flex-row items-center justify-between">
                 <View className="flex-1 pr-4">

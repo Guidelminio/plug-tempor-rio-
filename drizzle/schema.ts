@@ -63,6 +63,8 @@ export const classes = mysqlTable(
     dayOfWeek: int("dayOfWeek"),
     startTime: varchar("startTime", { length: 5 }),
     endTime: varchar("endTime", { length: 5 }),
+    spreadsheetId: varchar("spreadsheetId", { length: 128 }),
+    spreadsheetUrl: varchar("spreadsheetUrl", { length: 512 }),
     teacherEmail: varchar("teacherEmail", { length: 320 }).notNull(),
     teacherName: varchar("teacherName", { length: 160 }),
     active: boolean("active").default(true).notNull(),

@@ -403,6 +403,14 @@ export async function createClassForAdmin(actor: User, input: { code: string; na
   return attendanceClass;
 }
 
+export async function setClassSpreadsheet(classId: number, spreadsheetId: string, spreadsheetUrl: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados indisponível.");
+  await db.update(classes).set({ spreadsheetId, spreadsheetUrl, updatedAt: new Date() }).where(eq(classes.id, classId));
+  const saved = await db.select().from(classes).where(eq(classes.id, classId)).limit(1);
+  return saved[0];
+}
+
 export async function updateClassForAdmin(actor: User, classId: number, input: { name?: string; course?: string | null; dayOfWeek?: number | null; startTime?: string | null; endTime?: string | null; active?: boolean; teacherIds?: number[] }) {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados indisponível.");

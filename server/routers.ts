@@ -6,6 +6,7 @@ import * as db from "./db";
 import { createLocalSession, revokeAllUserSessions, revokeLocalSession } from "./local-session";
 import { systemRouter } from "./_core/systemRouter";
 import { createBatchId, enqueueAttendanceSync, processSyncBatch } from "./attendance-sync";
+import { callAppsScript } from "./apps-script-sync";
 
 const dateKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe uma data válida.");
 const timeKey = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Informe um horário válido.");
@@ -130,7 +131,42 @@ export const appRouter = router({
     listClasses: adminProcedure.query(() => db.listClassesForAdmin()),
     createClass: adminProcedure
       .input(z.object({ code: z.string().trim().min(2).max(64), name: z.string().trim().min(3).max(160), course: z.string().trim().max(255).optional(), dayOfWeek: z.number().int().min(0).max(6).optional(), startTime: timeKey.optional(), endTime: timeKey.optional(), teacherIds: z.array(z.number().int().positive()).default([]) }))
-      .mutation(({ ctx, input }) => db.createClassForAdmin(ctx.user, input)),
+      .mutation(async ({ ctx, input }) => {
+        const created = await db.createClassForAdmin(ctx.user, input);
+        try {
+          const provisioned = await callAppsScript({
+            action: "provisionClassSpreadsheet",
+            class: {
+              id: created.id,
+              code: created.code,
+              name: created.name,
+              course: created.course,
+              dayOfWeek: created.dayOfWeek,
+              startTime: created.startTime,
+              endTime: created.endTime,
+              teacherName: created.teacherName,
+              teacherEmail: created.teacherEmail,
+            },
+          });
+          if (!provisioned.spreadsheetId || !provisioned.spreadsheetUrl) throw new Error("A ponte não retornou a planilha criada.");
+          return await db.setClassSpreadsheet(created.id, provisioned.spreadsheetId, provisioned.spreadsheetUrl);
+        } catch (error) {
+          await db.createNotification(ctx.user.id, { type: "SHEET_PROVISIONING", title: "Planilha pendente", message: `A turma ${created.code} foi criada, mas a planilha individual ainda não foi provisionada. Tente novamente quando a ponte estiver disponível.`, referenceType: "class", referenceId: String(created.id) });
+          return created;
+        }
+      }),
+    provisionClassSpreadsheet: adminProcedure
+      .input(z.object({ classId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const rows = await db.listClassesForAdmin();
+        const attendanceClass = rows.find((item) => item.id === input.classId);
+        if (!attendanceClass) throw new Error("Turma não encontrada.");
+        if (attendanceClass.spreadsheetId && attendanceClass.spreadsheetUrl) return attendanceClass;
+        const provisioned = await callAppsScript({ action: "provisionClassSpreadsheet", class: { id: attendanceClass.id, code: attendanceClass.code, name: attendanceClass.name, course: attendanceClass.course, dayOfWeek: attendanceClass.dayOfWeek, startTime: attendanceClass.startTime, endTime: attendanceClass.endTime, teacherName: attendanceClass.teacherName, teacherEmail: attendanceClass.teacherEmail } });
+        if (!provisioned.spreadsheetId || !provisioned.spreadsheetUrl) throw new Error("A ponte não retornou a planilha criada.");
+        await db.audit(ctx.user.id, "PROVISION_CLASS_SPREADSHEET", "class", String(input.classId), { spreadsheetId: provisioned.spreadsheetId });
+        return db.setClassSpreadsheet(input.classId, provisioned.spreadsheetId, provisioned.spreadsheetUrl);
+      }),
     updateClass: adminProcedure
       .input(z.object({ classId: z.number().int().positive(), name: z.string().trim().min(3).max(160).optional(), course: z.string().trim().max(255).nullable().optional(), dayOfWeek: z.number().int().min(0).max(6).nullable().optional(), startTime: timeKey.nullable().optional(), endTime: timeKey.nullable().optional(), active: z.boolean().optional(), teacherIds: z.array(z.number().int().positive()).optional() }))
       .mutation(({ ctx, input }) => db.updateClassForAdmin(ctx.user, input.classId, input)),

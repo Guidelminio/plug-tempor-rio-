@@ -46,11 +46,11 @@ export default function AccountScreen() {
     <ScreenContainer className="px-5 pt-4" edges={["top", "left", "right"]}>
       <Text className="text-xs font-bold uppercase tracking-[1.5px] text-primary">Plug and Plus</Text>
       <Text className="mt-1 text-2xl font-black text-foreground">Sua conta</Text>
-      <View className="mt-6 rounded-3xl border border-border bg-surface p-5">
+      <View className="mt-6 rounded-[28px] bg-foreground p-5 shadow-sm">
         <View className="h-12 w-12 items-center justify-center rounded-full bg-[#E7EEF5]"><Text className="text-lg font-black text-[#36536F]">{(user?.name || user?.email || "P").slice(0, 1).toUpperCase()}</Text></View>
-        <Text className="mt-4 text-lg font-black text-foreground">{user?.name || "Professor(a)"}</Text>
-        <Text className="mt-1 text-sm text-muted">{user?.email || "Conta não identificada"}</Text>
-        <View className="mt-5 self-start rounded-full bg-[#E8F6EE] px-3 py-1.5"><Text className="text-xs font-bold text-[#176E46]">Sessão protegida neste aparelho</Text></View>
+        <Text className="mt-4 text-lg font-black text-white">{user?.name || "Professor(a)"}</Text>
+        <Text className="mt-1 text-sm text-[#C7D5E3]">{user?.email || "Conta não identificada"}</Text>
+        <View className="mt-5 self-start rounded-full bg-[#29435D] px-3 py-1.5"><Text className="text-xs font-bold text-[#9BE0BC]">Sessão protegida neste aparelho</Text></View>
       </View>
 
       {user?.mustChangePassword ? <View className="mt-5 rounded-2xl border border-[#F4D6B4] bg-[#FFF8EF] p-4"><Text className="text-sm font-black text-[#8B5A20]">Troca de senha necessária</Text><Text className="mt-1 text-sm leading-5 text-[#8B5A20]">A coordenação definiu uma senha temporária. Troque-a antes de continuar usando a conta.</Text><Pressable onPress={() => setModalOpen(true)} style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })} className="mt-3 self-start rounded-lg bg-primary px-4 py-2"><Text className="text-xs font-black text-[#17263A]">Trocar agora</Text></Pressable></View> : null}
