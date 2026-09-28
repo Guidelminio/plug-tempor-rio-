@@ -18,7 +18,7 @@ const googleIosUrlScheme = process.env.GOOGLE_IOS_URL_SCHEME ?? "";
 const config: ExpoConfig = {
   name: "Plug Presença",
   slug: "plug-presenca-mobile",
-  version: "1.0.0",
+  version: "1.0.1",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: schemeFromBundleId,
@@ -30,6 +30,7 @@ const config: ExpoConfig = {
     infoPlist: { ITSAppUsesNonExemptEncryption: false },
   },
   android: {
+    versionCode: 2,
     adaptiveIcon: {
       backgroundColor: "#FCFDFE",
       foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -50,6 +51,9 @@ const config: ExpoConfig = {
     ],
   },
   web: { bundler: "metro", output: "static", favicon: "./assets/images/favicon.png" },
+  extra: {
+    eas: { projectId: "c49d86be-03bd-401f-ae95-769c3169d697" },
+  },
   plugins: [
     "expo-router",
     ...(googleIosUrlScheme
